@@ -22,6 +22,7 @@ class MNIST(object):
             ids = [ str(i) + '/' + f[:-4] for f in files]
 
             # TODO: using the first 10k train examples and 5k test examples for the online training experiment
+            # This train and test is refering to 
             if self.split == 'train':
                 self.all_ids += ids[:1000]
             else:

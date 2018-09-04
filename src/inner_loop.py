@@ -40,30 +40,51 @@ class InnerLoop(OmniglotNet):
         input_var = torch.autograd.Variable(in_).cuda(async=True)
         target_var = torch.autograd.Variable(target).cuda(async=True)
         # Run the batch through the net, compute loss
+        
+        # Propogate forward the variable. 
+
         out = self.net_forward(input_var, weights)
+        # Find the loss on the input. 
         loss = self.loss_fn(out, target_var)
         return loss, out
     
     def forward(self, task):
         train_loader = get_data_loader(task, self.batch_size)
         val_loader = get_data_loader(task, self.batch_size, split='val')
+
+
         ##### Test net before training, should be random accuracy ####
         tr_pre_loss, tr_pre_acc = evaluate(self, train_loader)
         val_pre_loss, val_pre_acc = evaluate(self, val_loader)
         fast_weights = OrderedDict((name, param) for (name, param) in self.named_parameters())
+
+        # This is now for each internal step, which is the maml going forward. Note this is on the train_loader, not the 
         for i in range(self.num_updates):
             print 'inner step', i
+            # Get the next value. 
             in_, target = train_loader.__iter__().next()
             if i==0:
+                # Get the loss. 
                 loss, _ = self.forward_pass(in_, target)
+                # Find the 
                 grads = torch.autograd.grad(loss, self.parameters(), create_graph=True)
             else:
+                # Fast weights is just the temporarily updated weights. 
                 loss, _ = self.forward_pass(in_, target, fast_weights)
                 grads = torch.autograd.grad(loss, fast_weights.values(), create_graph=True)
             fast_weights = OrderedDict((name, param - self.step_size*grad) for ((name, param), grad) in zip(fast_weights.items(), grads))
+        # Now you have stepped the network forward. Note that you have stepped it forward per each gradient. 
+        print("Fast weights:")
+        print(fast_weights)
+
+
+
         ##### Test net after training, should be better than random ####
         tr_post_loss, tr_post_acc = evaluate(self, train_loader, fast_weights)
         val_post_loss, val_post_acc = evaluate(self, val_loader, fast_weights) 
+        
+        # This is showing the performance of the network before meta updates, and then after. But this is the generic performance. 
+
         print '\n Train Inner step Loss', tr_pre_loss, tr_post_loss
         print 'Train Inner step Acc', tr_pre_acc, tr_post_acc
         print '\n Val Inner step Loss', val_pre_loss, val_post_loss

@@ -20,13 +20,22 @@ def forward_pass(net, in_, target, weights=None):
     loss = net.loss_fn(out, target_var)
     return loss, out
 
+'''
+    This works by forward passing the network, the in amounts, and targets
+'''
 def evaluate(net, loader, weights=None):
     ''' evaluate the net on the data in the loader '''
     num_correct = 0
     loss = 0
     for i, (in_, target) in enumerate(loader):
         batch_size = in_.numpy().shape[0]
+        # In is 
+        print("IN: " , in_.shape)
+        # Target are the labels. 
+
+        print("Target: " , target)
         l, out = forward_pass(net, in_, target, weights)
-        loss += l.data.cpu().numpy()[0]
+        # John Edit Removed the [0]
+        loss += l.data.cpu().numpy()
         num_correct += count_correct(np.argmax(out.data.cpu().numpy(), axis=1), target.numpy())
     return float(loss) / len(loader), float(num_correct) / (len(loader)*batch_size)

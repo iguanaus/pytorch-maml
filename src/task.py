@@ -15,6 +15,8 @@ class OmniglotTask(object):
 
     def __init__(self, root, num_cls, num_inst, split='train'):
         self.dataset = 'omniglot'
+        # If this is train, then it uses ONLY the ones from the background alphabets. (training, the 1200)
+        # If this is test, then it uses ONLY the ones from the evaluation alphabets (testing, the 456)
         self.root = '{}/images_background'.format(root) if split == 'train' else '{}/images_evaluation'.format(root)
         self.num_cl = num_cls
         self.num_inst = num_inst
@@ -39,8 +41,19 @@ class OmniglotTask(object):
             self.train_ids += instances[c][:num_inst]
             self.val_ids += instances[c][num_inst:num_inst*2]
         # Keep instances separated by class for class-balanced mini-batches
+
+        # Each task has both a set of train labels, (which is 12 for example here, batch size of 3 and number_cls (the number of clases to show) is 4.) This matches the output as well. 
+        #
+
         self.train_labels = [labels[self.get_class(x)] for x in self.train_ids]
+        # This validation is the same size as above. 
         self.val_labels = [labels[self.get_class(x)] for x in self.val_ids]
+
+    def __str__(self):
+        print(self.train_labels)
+        #print(self.train_labels.shape)
+        print(self.val_labels)
+        #print(self.val_labels.shape)
         
 
     def get_class(self, instance):

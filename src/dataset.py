@@ -26,6 +26,9 @@ class FewShotDataset(data.Dataset):
     def __getitem__(self, idx):
         raise NotImplementedError("This is an abstract class. Subclass this class for your particular dataset.")
 
+'''
+    This is the database that is returned from the task.  It has both an image and a label. 
+'''
 class Omniglot(FewShotDataset):
    
     def __init__(self, *args, **kwargs):

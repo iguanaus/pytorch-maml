@@ -47,12 +47,20 @@ class MetaLearner(object):
         
         # Make the nets
         #TODO: don't actually need two nets
+        # Note this code base has two nets - one for the general, one for the inner loop
         num_input_channels = 1 if self.dataset == 'mnist' else 3
         self.net = OmniglotNet(num_classes, self.loss_fn, num_input_channels)
         self.net.cuda()
         self.fast_net = InnerLoop(num_classes, self.loss_fn, self.num_inner_updates, self.inner_step_size, self.inner_batch_size, self.meta_batch_size, num_input_channels)
         self.fast_net.cuda()
+        # This will be only over the net, not the fast net. 
         self.opt = Adam(self.net.parameters(), lr=meta_step_size)
+
+    '''
+        This function returns the task. 
+        # This is the task that is passed into everything. 
+
+    '''
             
     def get_task(self, root, n_cl, n_inst, split='train'):
         if 'mnist' in root:
@@ -130,10 +138,14 @@ class MetaLearner(object):
         del test_net
         return mtr_loss, mtr_acc, mval_loss, mval_acc
 
+    '''
+
+    '''
     def _train(self, exp):
         ''' debugging function: learn two tasks '''
         task1 = self.get_task('../data/{}'.format(self.dataset), self.num_classes, self.num_inst)
         task2 = self.get_task('../data/{}'.format(self.dataset), self.num_classes, self.num_inst)
+        # Numupdates is each individual update. 
         for it in range(self.num_updates):
             grads = []
             for task in [task1, task2]:
@@ -142,12 +154,17 @@ class MetaLearner(object):
                 _, g = self.fast_net.forward(task)
                 grads.append(g)
             self.meta_update(task, grads)
-            
+    '''
+        exp is name of folder. 
+    '''
     def train(self, exp):
         tr_loss, tr_acc, val_loss, val_acc = [], [], [], []
         mtr_loss, mtr_acc, mval_loss, mval_acc = [], [], [], []
+        # Num Updates is the number of each individual training update
         for it in range(self.num_updates):
+            print(it)
             # Evaluate on test tasks
+            # These test tasks are the other 456 (we know them as meta-test tasks)
             mt_loss, mt_acc, mv_loss, mv_acc = self.test()
             mtr_loss.append(mt_loss)
             mtr_acc.append(mt_acc)
@@ -156,8 +173,17 @@ class MetaLearner(object):
             # Collect a meta batch update
             grads = []
             tloss, tacc, vloss, vacc = 0.0, 0.0, 0.0, 0.0
+            # This is meta batch size. 
+
+            # Meta batch size is how many different tasks are used to do a meta learning update. 
             for i in range(self.meta_batch_size):
                 task = self.get_task('../data/{}'.format(self.dataset), self.num_classes, self.num_inst)
+                # This net should then just take the weights of the other net. But why reset each time?
+                # What is a task defined as?
+                # This task is OMNIGLOTTask object type. 
+                print(task)
+                # This task is 
+
                 self.fast_net.copy_weights(self.net)
                 metrics, g = self.fast_net.forward(task)
                 (trl, tra, vall, vala) = metrics
